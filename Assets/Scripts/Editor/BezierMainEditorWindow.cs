@@ -1,3 +1,4 @@
+using System;
 using UnityEditor;
 using UnityEngine;
 
@@ -11,6 +12,7 @@ public class BezierMainEditorWindow : EditorWindow
 
     private float _tVal;
     private bool _showDebug;
+    private Bezier _activeBezier;
 
     [MenuItem("Window/Bezier Curve Tool")]
     public static void ShowWindow()
@@ -68,7 +70,46 @@ public class BezierMainEditorWindow : EditorWindow
             }
         }
 
-        sceneView.Repaint();
+
+        // Draw control point handles
+        if (_activeBezier != null)
+        {
+            Handles.color = Color.cyan;
+            var worldPoints = _activeBezier.GetWorldControlPoints();
+
+            for (var index = 0; index < worldPoints.Count; index++)
+            {
+                EditorGUI.BeginChangeCheck();
+
+                var point = worldPoints[index];
+                Vector3 newPos = Handles.PositionHandle(point, Quaternion.identity);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    Undo.RecordObject(this, "Move Control Point");
+                    // update control point with the new pos
+                    _activeBezier.UpdateControlPoint(index, newPos);
+                }
+            }
+
+            // Update lerp value
+            _activeBezier.lerpVal = _tVal;
+
+            sceneView.Repaint();
+        }
+    }
+
+    // Get active bezier
+    private void OnSelectionChange()
+    {
+        if (Selection.activeGameObject != null && Selection.activeGameObject.GetComponent<Bezier>() != null)
+        {
+            // Get bezier
+            var bezier = Selection.activeGameObject.GetComponent<Bezier>();
+            if (bezier != null)
+            {
+                _activeBezier = bezier;
+            }
+        }
     }
 
     private Ray GetUserLookAt()
@@ -84,7 +125,7 @@ public class BezierMainEditorWindow : EditorWindow
 
         if (_showDebug)
         {
-            Debug.DrawRay(userView.origin, userView.direction * 100, Color.red);
+            Debug.DrawRay(userView.origin, userView.direction * 100, Color.red, 3f);
         }
 
         return userView;
