@@ -52,12 +52,13 @@ public class Bezier : MonoBehaviour
         var bezierLerpPointsL3 = VisualizeAndLerpPoints(bezierLerpPointsL2, lerpVal, Color.yellow, 0.1f, true);
         VisualizeAndLerpPoints(bezierLerpPointsL3, lerpVal, Color.green, 0.1f, true);
 
-        for (int i = 0; i < 100; i++)
+        for (int i = 1; i < 100; i++)
         {
             float lerp = i / 100f;
             var point = GetDiscreteBezierPoint(worldPoints, lerp);
+            var point2 = GetDiscreteBezierPoint(worldPoints, lerp + 0.01f);
             Gizmos.color = Color.white;
-            Gizmos.DrawSphere(point, 0.05f);
+            Gizmos.DrawLine(point, point2);
         }
     }
 
