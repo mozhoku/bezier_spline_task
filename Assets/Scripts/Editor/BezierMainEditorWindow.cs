@@ -10,6 +10,10 @@ public class BezierMainEditorWindow : EditorWindow
     private static bool _showReticle = true;
     private Vector3? _reticlePoint;
 
+    private static bool _showLaneGuides = true;
+
+
+    private float _laneWidth = 3f;
     private float _tVal;
     private bool _showDebug;
     private Bezier _activeBezier;
@@ -40,6 +44,8 @@ public class BezierMainEditorWindow : EditorWindow
             // generate the bezier curve
         }
 
+        _showLaneGuides = GUILayout.Toggle(_showLaneGuides, "Show Lane Guides");
+        _laneWidth = EditorGUILayout.Slider("Lane Width", _laneWidth, 0.1f, 10f);
         if (GUILayout.Button("Spawn Handle"))
         {
             SpawnBezierObject();
@@ -70,6 +76,19 @@ public class BezierMainEditorWindow : EditorWindow
             }
         }
 
+        if (_showLaneGuides)
+        {
+            if (_reticlePoint != null)
+            {
+                // z is length
+                // x is width
+                Handles.color = Color.yellow;
+                Handles.DrawLine(_reticlePoint.Value + new Vector3(_laneWidth / 2, 0, 3),
+                    _reticlePoint.Value + new Vector3(_laneWidth / 2, 0, 0));
+                Handles.DrawLine(_reticlePoint.Value + new Vector3(-_laneWidth / 2, 0, 3),
+                    _reticlePoint.Value + new Vector3(-_laneWidth / 2, 0, 0));
+            }
+        }
 
         // Draw control point handles
         if (_activeBezier != null)
@@ -135,18 +154,38 @@ public class BezierMainEditorWindow : EditorWindow
     {
         if (Physics.Raycast(GetUserLookAt(), out RaycastHit hit))
         {
-            GameObject bezierObject = new GameObject("Bezier Object")
+            // create lane object
+            GameObject laneObject = new GameObject("Lane Object")
             {
                 transform =
                 {
                     position = hit.point
                 }
             };
-            bezierObject.AddComponent<Bezier>().AddControlPoint(hit.point);
+
+            var posRight = hit.point + new Vector3(_laneWidth / 2, 0, 0);
+            var posLeft = hit.point + new Vector3(-_laneWidth / 2, 0, 0);
+
+            // add lines and set parent
+            AddLineBezier(posRight, "rightLine").transform.SetParent(laneObject.transform);
+            AddLineBezier(posLeft, "leftLine").transform.SetParent(laneObject.transform);
         }
         else
         {
             Debug.Log("Aim to a mesh to spawn a handle.");
         }
+    }
+
+    private static GameObject AddLineBezier(Vector3 position, string objName)
+    {
+        GameObject bezierObject = new GameObject(objName)
+        {
+            transform =
+            {
+                position = position
+            }
+        };
+        bezierObject.AddComponent<Bezier>().AddControlPoint(position);
+        return bezierObject;
     }
 }
