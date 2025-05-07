@@ -112,7 +112,6 @@ public class BezierMainEditorWindow : EditorWindow
 
             // Update lerp value
             _activeBezier.lerpVal = _tVal;
-
             sceneView.Repaint();
         }
     }
@@ -120,14 +119,16 @@ public class BezierMainEditorWindow : EditorWindow
     // Get active bezier
     private void OnSelectionChange()
     {
-        if (Selection.activeGameObject != null && Selection.activeGameObject.GetComponent<Bezier>() != null)
+        if (Selection.activeGameObject != null && Selection.activeGameObject.TryGetComponent(out Bezier bezier))
         {
-            // Get bezier
-            var bezier = Selection.activeGameObject.GetComponent<Bezier>();
             if (bezier != null)
             {
                 _activeBezier = bezier;
             }
+        }
+        else
+        {
+            _activeBezier = null;
         }
     }
 
