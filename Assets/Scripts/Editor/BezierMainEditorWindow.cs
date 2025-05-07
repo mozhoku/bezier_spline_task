@@ -12,11 +12,16 @@ public class BezierMainEditorWindow : EditorWindow
 
     private static bool _showLaneGuides = true;
 
-
     private float _laneWidth = 3f;
     private float _tVal;
     private bool _showDebug;
     private Bezier _activeBezier;
+
+    // Node Stamping
+    [Range(0.01f, 100f)] private float _nodeStampDistance = 1f;
+    [Range(0.01f, 1f)] private float _nodeStampPercentage = 0.25f;
+    private int _nodeStampCount = 3;
+    private PointCreationMode _pointCreationMode;
 
     [MenuItem("Window/Bezier Curve Tool")]
     public static void ShowWindow()
@@ -39,10 +44,7 @@ public class BezierMainEditorWindow : EditorWindow
         _showDebug = EditorGUILayout.Toggle("Show Debug", _showDebug);
         _tVal = EditorGUILayout.Slider("t Value", _tVal, 0f, 1f);
 
-        if (GUILayout.Button("Generate Bezier Curve"))
-        {
-            // generate the bezier curve
-        }
+        _showReticle = GUILayout.Toggle(_showReticle, "Show Reticle");
 
         _showLaneGuides = GUILayout.Toggle(_showLaneGuides, "Show Lane Guides");
         _laneWidth = EditorGUILayout.Slider("Lane Width", _laneWidth, 0.1f, 10f);
@@ -51,7 +53,43 @@ public class BezierMainEditorWindow : EditorWindow
             SpawnBezierObject();
         }
 
-        _showReticle = GUILayout.Toggle(_showReticle, "Show Reticle");
+        // Node Creation Mode
+        _pointCreationMode = (PointCreationMode)EditorGUILayout.EnumPopup("Node Creation Mode", _pointCreationMode);
+        switch (_pointCreationMode)
+        {
+            case PointCreationMode.CreateWithPercentage:
+                _nodeStampPercentage = EditorGUILayout.Slider("Node Stamp Percentage", _nodeStampPercentage, 0.01f, 1f);
+                break;
+            case PointCreationMode.CreateWithDistance:
+                _nodeStampDistance = EditorGUILayout.Slider("Node Stamp Distance", _nodeStampDistance, 0.01f, 100f);
+                break;
+            case PointCreationMode.CreateWithCount:
+            {
+                _nodeStampCount = EditorGUILayout.IntField("Node Stamp Count", _nodeStampCount);
+
+                // prevent negative or zero values
+                if (_nodeStampCount < 1)
+                {
+                    _nodeStampCount = 1;
+                }
+
+                break;
+            }
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+
+        if (GUILayout.Button("Generate Bezier Curve"))
+        {
+            if (_activeBezier != null)
+            {
+                _activeBezier.GenerateBezierCurve();
+            }
+            else
+            {
+                Debug.LogWarning("No active Bezier object selected.");
+            }
+        }
     }
 
     private void OnSceneGUI(SceneView sceneView)
@@ -84,9 +122,9 @@ public class BezierMainEditorWindow : EditorWindow
                 // x is width
                 Handles.color = Color.yellow;
                 Handles.DrawLine(_reticlePoint.Value + new Vector3(_laneWidth / 2, 0, 3),
-                    _reticlePoint.Value + new Vector3(_laneWidth / 2, 0, 0));
+                    _reticlePoint.Value + new Vector3(_laneWidth / 2, 0, 0), 3);
                 Handles.DrawLine(_reticlePoint.Value + new Vector3(-_laneWidth / 2, 0, 3),
-                    _reticlePoint.Value + new Vector3(-_laneWidth / 2, 0, 0));
+                    _reticlePoint.Value + new Vector3(-_laneWidth / 2, 0, 0), 3);
             }
         }
 
@@ -111,7 +149,27 @@ public class BezierMainEditorWindow : EditorWindow
             }
 
             // Update lerp value
-            _activeBezier.lerpVal = _tVal;
+            _activeBezier.lerpValue = _tVal;
+
+            // Update stamp options & values
+            switch (_pointCreationMode)
+            {
+                case PointCreationMode.CreateWithPercentage:
+                    _activeBezier.nodeStampPercentage = _nodeStampPercentage;
+                    _activeBezier.pointCreationMode = PointCreationMode.CreateWithPercentage;
+                    break;
+                case PointCreationMode.CreateWithDistance:
+                    _activeBezier.nodeStampDistance = _nodeStampDistance;
+                    _activeBezier.pointCreationMode = PointCreationMode.CreateWithDistance;
+                    break;
+                case PointCreationMode.CreateWithCount:
+                    _activeBezier.nodeStampCount = _nodeStampCount;
+                    _activeBezier.pointCreationMode = PointCreationMode.CreateWithCount;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
             sceneView.Repaint();
         }
     }
