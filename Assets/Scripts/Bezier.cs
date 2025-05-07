@@ -14,7 +14,7 @@ public class Bezier : MonoBehaviour
     [Range(2, 50)] public int curveSubdivisions = 50;
 
     // Node stamping
-    public PointCreationMode pointCreationMode;
+    public CurveSamplingMode curveSamplingMode;
     public float nodeStampDistance = 1f;
     public float nodeStampPercentage = 0.25f;
     public int nodeStampCount = 3;
@@ -74,9 +74,9 @@ public class Bezier : MonoBehaviour
         }
 
         // Point creation mode
-        switch (pointCreationMode)
+        switch (curveSamplingMode)
         {
-            case PointCreationMode.CreateWithPercentage:
+            case CurveSamplingMode.SampleWithPercentage:
             {
                 float step = Mathf.Clamp01(nodeStampPercentage);
                 int sampleCount = Mathf.FloorToInt(1f / step);
@@ -99,7 +99,7 @@ public class Bezier : MonoBehaviour
 
                 break;
             }
-            case PointCreationMode.CreateWithDistance:
+            case CurveSamplingMode.SampleWithDistance:
             {
                 float spacing = nodeStampDistance;
                 float totalLength = EstimateCurveLength(worldPoints, curveSubdivisions);
@@ -119,7 +119,7 @@ public class Bezier : MonoBehaviour
                 Gizmos.DrawSphere(endPoint, sphereRadius);
                 break;
             }
-            case PointCreationMode.CreateWithCount:
+            case CurveSamplingMode.SampleWithCount:
             {
                 int count = Mathf.Max(3, nodeStampCount);
                 float step = 1f / (count - 1);

@@ -21,7 +21,7 @@ public class BezierMainEditorWindow : EditorWindow
     [Range(0.01f, 100f)] private float _nodeStampDistance = 1f;
     [Range(0.01f, 1f)] private float _nodeStampPercentage = 0.25f;
     private int _nodeStampCount = 3;
-    private PointCreationMode _pointCreationMode;
+    private CurveSamplingMode _curveSamplingMode;
 
     [MenuItem("Window/Bezier Curve Tool")]
     public static void ShowWindow()
@@ -54,16 +54,16 @@ public class BezierMainEditorWindow : EditorWindow
         }
 
         // Node Creation Mode
-        _pointCreationMode = (PointCreationMode)EditorGUILayout.EnumPopup("Node Creation Mode", _pointCreationMode);
-        switch (_pointCreationMode)
+        _curveSamplingMode = (CurveSamplingMode)EditorGUILayout.EnumPopup("Curve Sampling Mode", _curveSamplingMode);
+        switch (_curveSamplingMode)
         {
-            case PointCreationMode.CreateWithPercentage:
+            case CurveSamplingMode.SampleWithPercentage:
                 _nodeStampPercentage = EditorGUILayout.Slider("Node Stamp Percentage", _nodeStampPercentage, 0.01f, 1f);
                 break;
-            case PointCreationMode.CreateWithDistance:
+            case CurveSamplingMode.SampleWithDistance:
                 _nodeStampDistance = EditorGUILayout.Slider("Node Stamp Distance", _nodeStampDistance, 0.01f, 100f);
                 break;
-            case PointCreationMode.CreateWithCount:
+            case CurveSamplingMode.SampleWithCount:
             {
                 _nodeStampCount = EditorGUILayout.IntField("Node Stamp Count", _nodeStampCount);
 
@@ -152,19 +152,19 @@ public class BezierMainEditorWindow : EditorWindow
             _activeBezier.lerpValue = _tVal;
 
             // Update stamp options & values
-            switch (_pointCreationMode)
+            switch (_curveSamplingMode)
             {
-                case PointCreationMode.CreateWithPercentage:
+                case CurveSamplingMode.SampleWithPercentage:
                     _activeBezier.nodeStampPercentage = _nodeStampPercentage;
-                    _activeBezier.pointCreationMode = PointCreationMode.CreateWithPercentage;
+                    _activeBezier.curveSamplingMode = CurveSamplingMode.SampleWithPercentage;
                     break;
-                case PointCreationMode.CreateWithDistance:
+                case CurveSamplingMode.SampleWithDistance:
                     _activeBezier.nodeStampDistance = _nodeStampDistance;
-                    _activeBezier.pointCreationMode = PointCreationMode.CreateWithDistance;
+                    _activeBezier.curveSamplingMode = CurveSamplingMode.SampleWithDistance;
                     break;
-                case PointCreationMode.CreateWithCount:
+                case CurveSamplingMode.SampleWithCount:
                     _activeBezier.nodeStampCount = _nodeStampCount;
-                    _activeBezier.pointCreationMode = PointCreationMode.CreateWithCount;
+                    _activeBezier.curveSamplingMode = CurveSamplingMode.SampleWithCount;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
