@@ -119,6 +119,64 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &118429511
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 118429512}
+  - component: {fileID: 118429513}
+  m_Layer: 0
+  m_Name: leftLine
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &118429512
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 118429511}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -1.5, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1174591983}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &118429513
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 118429511}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e13a09558baa9394aa674cdef7e108ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  localControlPoints:
+  - {x: 0, y: 0, z: 0}
+  - {x: -2.6712475, y: 0, z: 0.5219307}
+  - {x: -2.5527287, y: 0, z: 3.0769272}
+  - {x: 0, y: 0, z: 4}
+  lerpValue: 0.5
+  sphereRadius: 0.1
+  lineColor: {r: 1, g: 0.920817, b: 0, a: 1}
+  curveSubdivisions: 50
+  curveSamplingMode: 0
+  nodeStampDistance: 1
+  nodeStampPercentage: 0.25
+  nodeStampCount: 3
+  samplePointCoords: []
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -212,7 +270,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
---- !u!1 &1071785872
+--- !u!1 &1045976330
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -220,8 +278,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1071785873}
-  - component: {fileID: 1071785874}
+  - component: {fileID: 1045976331}
+  - component: {fileID: 1045976332}
   m_Layer: 0
   m_Name: rightLine
   m_TagString: Untagged
@@ -229,28 +287,28 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &1071785873
+--- !u!4 &1045976331
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1071785872}
+  m_GameObject: {fileID: 1045976330}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 2.74, y: 0, z: -0.24}
+  m_LocalPosition: {x: -0.43, y: 0, z: -5.58}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 2110839941}
+  m_Father: {fileID: 1174591983}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1071785874
+--- !u!114 &1045976332
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1071785872}
+  m_GameObject: {fileID: 1045976330}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e13a09558baa9394aa674cdef7e108ad, type: 3}
@@ -258,16 +316,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   localControlPoints:
   - {x: 0, y: 0, z: 0}
-  - {x: 48.09654, y: 0, z: 11.611005}
-  - {x: 38.103718, y: 0, z: 42.617355}
-  - {x: 8.5881195, y: 0, z: 52.697147}
+  - {x: 4.540207, y: 0, z: -3.1977615}
+  - {x: 7.7971606, y: 0, z: 5.2011204}
+  - {x: 3.0458486, y: 0, z: 6.566553}
   lerpValue: 0.5
-  sphereRadius: 0.75
-  curveSubdivisions: 25
-  pointCreationMode: 1
-  nodeStampDistance: 18
-  nodeStampPercentage: 0.17
-  nodeStampCount: 5
+  sphereRadius: 0.1
+  lineColor: {r: 1, g: 0.5152212, b: 0, a: 1}
+  curveSubdivisions: 50
+  curveSamplingMode: 2
+  nodeStampDistance: 1
+  nodeStampPercentage: 0.048
+  nodeStampCount: 4
+  samplePointCoords:
+  - {x: 33.12652, y: -9.69189e-18, z: 38.068398}
+  - {x: 37.14795, y: -9.69189e-18, z: 38.26607}
+  - {x: 38.819427, y: -9.69189e-18, z: 42.05482}
+  - {x: 36.172367, y: -9.69189e-18, z: 44.63495}
 --- !u!1 &1104352249
 GameObject:
   m_ObjectHideFlags: 0
@@ -376,7 +440,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2000491059
+--- !u!1 &1174591982
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -384,63 +448,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2000491060}
-  - component: {fileID: 2000491061}
-  m_Layer: 0
-  m_Name: leftLine
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2000491060
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2000491059}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -4.39, y: 0, z: -0.74}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2110839941}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2000491061
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2000491059}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e13a09558baa9394aa674cdef7e108ad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  localControlPoints:
-  - {x: 0, y: 0, z: 0}
-  - {x: -37.02887, y: 0, z: -2.1541603}
-  - {x: -29.121855, y: 0, z: 51.60942}
-  - {x: 7.348251, y: 0, z: 57.962936}
-  lerpValue: 0.489
-  sphereRadius: 0.75
-  curveSubdivisions: 25
-  pointCreationMode: 2
-  nodeStampDistance: 14.2
-  nodeStampPercentage: 1
-  nodeStampCount: 3
---- !u!1 &2110839940
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2110839941}
+  - component: {fileID: 1174591983}
   m_Layer: 0
   m_Name: Lane Object
   m_TagString: Untagged
@@ -448,21 +456,21 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &2110839941
+--- !u!4 &1174591983
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2110839940}
+  m_GameObject: {fileID: 1174591982}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 24.353539, y: -3.4296085e-18, z: 15.445582}
+  m_LocalPosition: {x: 33.55652, y: -9.69189e-18, z: 43.648396}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1071785873}
-  - {fileID: 2000491060}
+  - {fileID: 1045976331}
+  - {fileID: 118429512}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
@@ -471,4 +479,4 @@ SceneRoots:
   m_Roots:
   - {fileID: 705507995}
   - {fileID: 1104352253}
-  - {fileID: 2110839941}
+  - {fileID: 1174591983}

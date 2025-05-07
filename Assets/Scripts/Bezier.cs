@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 using UnityEngine;
 
 [ExecuteInEditMode]
@@ -8,7 +9,10 @@ public class Bezier : MonoBehaviour
 {
     [SerializeField] private List<Vector3> localControlPoints = new();
     public float lerpValue = 0;
-    public float sphereRadius = 0.75f;
+    public float sphereRadius = 0.1f;
+
+    // Line color
+    [ColorUsage(false, false)] public Color lineColor;
 
     // Subdivision
     [Range(2, 50)] public int curveSubdivisions = 50;
@@ -19,13 +23,17 @@ public class Bezier : MonoBehaviour
     public float nodeStampPercentage = 0.25f;
     public int nodeStampCount = 3;
 
+    // Sample points coordinates
+    [SerializeField] private List<Vector3> samplePointCoords = new();
+
     // Add 4 local control points
-    public void AddControlPoint(Vector3 worldPoint)
+    public void AddControlPoints(Vector3 worldPoint, float length)
     {
+        var dividedLength = length / 3f;
         localControlPoints.Add(transform.InverseTransformPoint(worldPoint));
-        localControlPoints.Add(transform.InverseTransformPoint(worldPoint + Vector3.forward));
-        localControlPoints.Add(transform.InverseTransformPoint(worldPoint + Vector3.forward * 2));
-        localControlPoints.Add(transform.InverseTransformPoint(worldPoint + Vector3.forward * 3));
+        localControlPoints.Add(transform.InverseTransformPoint(worldPoint + Vector3.forward * dividedLength));
+        localControlPoints.Add(transform.InverseTransformPoint(worldPoint + Vector3.forward * (dividedLength * 2)));
+        localControlPoints.Add(transform.InverseTransformPoint(worldPoint + Vector3.forward * (dividedLength * 3)));
     }
 
     // Get World space coords
@@ -38,6 +46,11 @@ public class Bezier : MonoBehaviour
         }
 
         return worldPoints;
+    }
+
+    public void SetLineColor(Color color)
+    {
+        lineColor = color;
     }
 
     // Set control points
@@ -57,92 +70,45 @@ public class Bezier : MonoBehaviour
         // Debug
         var worldPoints = GetWorldControlPoints();
         var bezierLerpPointsL1 = VisualizeAndLerpPoints(worldPoints, lerpValue, Color.cyan, sphereRadius, true);
-        var bezierLerpPointsL2 = VisualizeAndLerpPoints(bezierLerpPointsL1, lerpValue, Color.red, sphereRadius, true);
+        var bezierLerpPointsL2 =
+            VisualizeAndLerpPoints(bezierLerpPointsL1, lerpValue, Color.red, sphereRadius / 2, true);
         var bezierLerpPointsL3 =
-            VisualizeAndLerpPoints(bezierLerpPointsL2, lerpValue, Color.yellow, sphereRadius, true);
-        VisualizeAndLerpPoints(bezierLerpPointsL3, lerpValue, Color.green, sphereRadius, true);
+            VisualizeAndLerpPoints(bezierLerpPointsL2, lerpValue, Color.yellow, sphereRadius / 2, true);
+        VisualizeAndLerpPoints(bezierLerpPointsL3, lerpValue, Color.green, sphereRadius / 2, true);
 
         // Bezier line visualization
-        for (int i = 1; i <= curveSubdivisions; i++)
+        List<Vector3> handleVisualization = new();
+        for (int i = 0; i <= curveSubdivisions; i++)
         {
-            float t1 = (i - 1) / (float)curveSubdivisions;
-            float t2 = i / (float)curveSubdivisions;
+            float t1 = i / (float)curveSubdivisions;
             var point1 = GetDiscreteBezierPoint(worldPoints, t1);
-            var point2 = GetDiscreteBezierPoint(worldPoints, t2);
-            Gizmos.color = Color.white;
-            Gizmos.DrawLine(point1, point2);
+            handleVisualization.Add(point1);
         }
+
+        Handles.color = lineColor;
+        Handles.DrawAAPolyLine(7f, handleVisualization.ToArray());
 
         // Point creation mode
         switch (curveSamplingMode)
         {
             case CurveSamplingMode.SampleWithPercentage:
             {
-                float step = Mathf.Clamp01(nodeStampPercentage);
-                int sampleCount = Mathf.FloorToInt(1f / step);
-
-                Gizmos.color = Color.white;
-
-                for (int i = 0; i <= sampleCount; i++)
-                {
-                    float t = i * step;
-                    Vector3 point = GetDiscreteBezierPoint(worldPoints, t);
-                    Gizmos.DrawSphere(point, sphereRadius);
-                }
-
-                // draw endpoint
-                if (sampleCount * step < 1f)
-                {
-                    Vector3 endPoint = GetDiscreteBezierPoint(worldPoints, 1f);
-                    Gizmos.DrawSphere(endPoint, sphereRadius);
-                }
-
+                SampleCurveWithPercentage(worldPoints, nodeStampPercentage, false, true);
                 break;
             }
             case CurveSamplingMode.SampleWithDistance:
             {
-                float spacing = nodeStampDistance;
-                float totalLength = EstimateCurveLength(worldPoints, curveSubdivisions);
-                int sampleCount = Mathf.FloorToInt(totalLength / spacing);
-
-                Gizmos.color = Color.blue;
-
-                for (int i = 0; i <= sampleCount; i++)
-                {
-                    float distance = i * spacing;
-                    Vector3 point = GetPointAtDistance(worldPoints, distance, curveSubdivisions);
-                    Gizmos.DrawSphere(point, sphereRadius);
-                }
-
-                // draw endpoint
-                Vector3 endPoint = GetDiscreteBezierPoint(worldPoints, 1f);
-                Gizmos.DrawSphere(endPoint, sphereRadius);
+                SampleCurveWithDistance(worldPoints, nodeStampDistance, false, true);
                 break;
             }
             case CurveSamplingMode.SampleWithCount:
             {
-                int count = Mathf.Max(3, nodeStampCount);
-                float step = 1f / (count - 1);
-
-                Gizmos.color = Color.magenta;
-
-                for (int i = 0; i < count; i++)
-                {
-                    float t = i * step;
-                    Vector3 point = GetDiscreteBezierPoint(worldPoints, t);
-                    Gizmos.DrawSphere(point, sphereRadius);
-                }
-
+                SampleCurveWithCount(worldPoints, nodeStampCount, false, true);
                 break;
             }
             default:
                 throw new ArgumentOutOfRangeException();
         }
-    }
-
-    public void GenerateBezierCurve()
-    {
-        // Generate the curve based on the point creation mode
     }
 
     private static Vector3 GetDiscreteBezierPoint(List<Vector3> controlPoints, float lerpValue)
@@ -223,5 +189,136 @@ public class Bezier : MonoBehaviour
         }
 
         return lerpPoints;
+    }
+
+    public void SampleCurveWithPercentage(List<Vector3> points, float percentage, bool updateChildrenCoords,
+        bool drawGizmos)
+    {
+        float step = Mathf.Clamp01(percentage);
+        int sampleCount = Mathf.FloorToInt(1f / step);
+        if (drawGizmos)
+        {
+            Gizmos.color = Color.white;
+        }
+
+        for (int i = 0; i <= sampleCount; i++)
+        {
+            float t = i * step;
+            Vector3 point = GetDiscreteBezierPoint(points, t);
+            if (drawGizmos)
+            {
+                Gizmos.DrawSphere(point, sphereRadius);
+            }
+
+            if (updateChildrenCoords)
+            {
+                samplePointCoords.Add(point);
+            }
+        }
+
+        // draw endpoint
+        if (sampleCount * step < 1f)
+        {
+            Vector3 endPoint = GetDiscreteBezierPoint(points, 1f);
+            if (drawGizmos)
+            {
+                Gizmos.DrawSphere(endPoint, sphereRadius);
+            }
+
+            if (updateChildrenCoords)
+            {
+                samplePointCoords.Add(endPoint);
+            }
+        }
+    }
+
+    public void SampleCurveWithDistance(List<Vector3> points, float nodeDistance, bool updateChildrenCoords,
+        bool drawGizmos)
+    {
+        float spacing = nodeDistance;
+        float totalLength = EstimateCurveLength(points, curveSubdivisions);
+        int sampleCount = Mathf.FloorToInt(totalLength / spacing);
+
+        if (drawGizmos)
+        {
+            Gizmos.color = Color.blue;
+        }
+
+        for (int i = 0; i <= sampleCount; i++)
+        {
+            float distance = i * spacing;
+            Vector3 point = GetPointAtDistance(points, distance, curveSubdivisions);
+            if (drawGizmos)
+            {
+                Gizmos.DrawSphere(point, sphereRadius);
+            }
+
+            if (updateChildrenCoords)
+            {
+                samplePointCoords.Add(point);
+            }
+        }
+
+        // draw endpoint
+        Vector3 endPoint = GetDiscreteBezierPoint(points, 1f);
+        if (drawGizmos)
+        {
+            Gizmos.DrawSphere(endPoint, sphereRadius);
+        }
+
+        if (updateChildrenCoords)
+        {
+            samplePointCoords.Add(endPoint);
+        }
+    }
+
+    public void SampleCurveWithCount(List<Vector3> points, int nodeCount, bool updateChildrenCoords, bool drawGizmos)
+    {
+        int count = Mathf.Max(3, nodeCount);
+        float step = 1f / (count - 1);
+
+        if (drawGizmos)
+        {
+            Gizmos.color = Color.magenta;
+        }
+
+        for (int i = 0; i < count; i++)
+        {
+            float t = i * step;
+            Vector3 point = GetDiscreteBezierPoint(points, t);
+            if (drawGizmos)
+            {
+                Gizmos.DrawSphere(point, sphereRadius);
+            }
+
+            if (updateChildrenCoords)
+            {
+                samplePointCoords.Add(point);
+            }
+        }
+    }
+
+    public List<Vector3> GetSamplePoints()
+    {
+        return samplePointCoords;
+    }
+
+    public void ClearSamplePoints()
+    {
+        samplePointCoords.Clear();
+    }
+
+    public GameObject CreateSamplePointObjects(List<Vector3> coords)
+    {
+        GameObject samplePointParent = new GameObject("Sampled Points");
+        foreach (var coord in coords)
+        {
+            GameObject samplePoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            samplePoint.transform.position = coord;
+            samplePoint.transform.localScale = Vector3.one;
+            samplePoint.transform.parent = samplePointParent.transform;
+        }
+
+        return samplePointParent;
     }
 }
