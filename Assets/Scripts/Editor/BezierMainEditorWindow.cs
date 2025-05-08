@@ -24,7 +24,7 @@ public class BezierMainEditorWindow : EditorWindow
     [ColorUsage(false, false)] private Color _leftLineColor = Color.blue;
 
     // Node Stamping
-    [Range(0.01f, 100f)] private float _nodeSampleDistance = 0.5f;
+    [Range(0.01f, 10f)] private float _nodeSampleDistance = 0.5f;
     [Range(0.01f, 1f)] private float _nodeSamplePercentage = 0.2f;
     private int _nodeSampleCount = 7;
 
@@ -95,7 +95,7 @@ public class BezierMainEditorWindow : EditorWindow
             case CurveSamplingMode.SampleWithDistance:
             {
                 _nodeSampleDistance =
-                    EditorGUILayout.Slider("Node Sample Distance", _nodeSampleDistance, 0.01f, 100f);
+                    EditorGUILayout.Slider("Node Sample Distance", _nodeSampleDistance, 0.01f, 10f);
                 _samplingValue = _nodeSampleDistance;
                 break;
             }
