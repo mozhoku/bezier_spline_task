@@ -4,6 +4,10 @@
 
 This is an Unity Editor extension for creating and editing Bezier curves directly in the Scene View. Useful for visualizing paths, lanes, or other curve-based systems in level design or gameplay tools.
 
+## Video
+
+[![Watch the video](https://img.youtube.com/vi/vQqkCcfsjX8/maxresdefault.jpg)](https://youtu.be/vQqkCcfsjX8)
+
 ## Features
 
 - Create and edit Bezier curves in the Unity Editor.
