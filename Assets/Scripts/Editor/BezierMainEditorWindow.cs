@@ -24,9 +24,9 @@ public class BezierMainEditorWindow : EditorWindow
     [ColorUsage(false, false)] private Color _leftLineColor = Color.blue;
 
     // Node Stamping
-    [Range(0.01f, 100f)] private const float NodeStampDistance = 0.5f;
-    [Range(0.01f, 1f)] private const float NodeStampPercentage = 0.2f;
-    private const int NodeStampCount = 7;
+    [Range(0.01f, 100f)] private float _nodeSampleDistance = 0.5f;
+    [Range(0.01f, 1f)] private float _nodeSamplePercentage = 0.2f;
+    private int _nodeSampleCount = 7;
 
     private float _samplingValue;
     private CurveSamplingMode _curveSamplingMode;
@@ -87,25 +87,30 @@ public class BezierMainEditorWindow : EditorWindow
         {
             case CurveSamplingMode.SampleWithPercentage:
             {
-                _samplingValue =
-                    EditorGUILayout.Slider("Node Stamp Percentage", NodeStampPercentage, 0.01f, 1f);
+                _nodeSamplePercentage =
+                    EditorGUILayout.Slider("Node Stamp Percentage", _nodeSamplePercentage, 0.01f, 1f);
+                _samplingValue = _nodeSamplePercentage;
                 break;
             }
             case CurveSamplingMode.SampleWithDistance:
             {
-                _samplingValue =
-                    EditorGUILayout.Slider("Node Stamp Distance", NodeStampDistance, 0.01f, 100f);
+                _nodeSampleDistance =
+                    EditorGUILayout.Slider("Node Sample Distance", _nodeSampleDistance, 0.01f, 100f);
+                _samplingValue = _nodeSampleDistance;
                 break;
             }
             case CurveSamplingMode.SampleWithCount:
             {
-                _samplingValue = EditorGUILayout.IntField("Node Stamp Count", NodeStampCount);
+                _nodeSampleCount = EditorGUILayout.IntField("Node Sample Count", _nodeSampleCount);
 
                 // prevent negative or zero values
                 if (_samplingValue < 1)
                 {
                     _samplingValue = 1;
                 }
+
+                // conversion to float!
+                _samplingValue = _nodeSampleCount;
 
                 break;
             }
@@ -143,7 +148,7 @@ public class BezierMainEditorWindow : EditorWindow
                 Debug.LogWarning("Please select an object that has a 'Lane' component attached to it.");
             }
         }
-        
+
         SceneView.lastActiveSceneView.Repaint();
     }
 
@@ -211,15 +216,15 @@ public class BezierMainEditorWindow : EditorWindow
             switch (_curveSamplingMode)
             {
                 case CurveSamplingMode.SampleWithPercentage:
-                    _selectedBezier.nodeStampPercentage = NodeStampPercentage;
+                    _selectedBezier.nodeStampPercentage = _nodeSamplePercentage;
                     _selectedBezier.curveSamplingMode = CurveSamplingMode.SampleWithPercentage;
                     break;
                 case CurveSamplingMode.SampleWithDistance:
-                    _selectedBezier.nodeStampDistance = NodeStampDistance;
+                    _selectedBezier.nodeStampDistance = _nodeSampleDistance;
                     _selectedBezier.curveSamplingMode = CurveSamplingMode.SampleWithDistance;
                     break;
                 case CurveSamplingMode.SampleWithCount:
-                    _selectedBezier.nodeStampCount = NodeStampCount;
+                    _selectedBezier.nodeStampCount = _nodeSampleCount;
                     _selectedBezier.curveSamplingMode = CurveSamplingMode.SampleWithCount;
                     break;
                 default:
@@ -262,7 +267,7 @@ public class BezierMainEditorWindow : EditorWindow
         }
 
         Ray userView = sceneView.camera.ViewportPointToRay(_userViewCenter);
-        
+
         return userView;
     }
 
