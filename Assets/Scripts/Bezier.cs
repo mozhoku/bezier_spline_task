@@ -19,21 +19,26 @@ public class Bezier : MonoBehaviour
 
     // Node stamping
     public CurveSamplingMode curveSamplingMode;
-    public float nodeStampDistance = 1f;
-    public float nodeStampPercentage = 0.25f;
-    public int nodeStampCount = 3;
+    public float nodeStampDistance = 0.5f;
+    public float nodeStampPercentage = 0.2f;
+    public int nodeStampCount = 7;
+
+    // debug
+    [SerializeField] private bool _showDebug;
 
     // Sample points coordinates
+    [SerializeField] private GameObject samplePointsHolder;
     [SerializeField] private List<Vector3> samplePointCoords = new();
+
 
     // Add 4 local control points
     public void AddControlPoints(Vector3 worldPoint, float length)
     {
         var dividedLength = length / 3f;
-        localControlPoints.Add(transform.InverseTransformPoint(worldPoint));
-        localControlPoints.Add(transform.InverseTransformPoint(worldPoint + Vector3.forward * dividedLength));
-        localControlPoints.Add(transform.InverseTransformPoint(worldPoint + Vector3.forward * (dividedLength * 2)));
-        localControlPoints.Add(transform.InverseTransformPoint(worldPoint + Vector3.forward * (dividedLength * 3)));
+        localControlPoints.Add(transform.InverseTransformPoint(worldPoint + Vector3.forward * (dividedLength * -1.5f)));
+        localControlPoints.Add(transform.InverseTransformPoint(worldPoint + Vector3.forward * (dividedLength * -0.5f)));
+        localControlPoints.Add(transform.InverseTransformPoint(worldPoint + Vector3.forward * (dividedLength * 0.5f)));
+        localControlPoints.Add(transform.InverseTransformPoint(worldPoint + Vector3.forward * (dividedLength * 1.5f)));
     }
 
     // Get World space coords
@@ -69,12 +74,13 @@ public class Bezier : MonoBehaviour
     {
         // Debug
         var worldPoints = GetWorldControlPoints();
-        var bezierLerpPointsL1 = VisualizeAndLerpPoints(worldPoints, lerpValue, Color.cyan, sphereRadius, true);
+        var bezierLerpPointsL1 =
+            VisualizeAndLerpPoints(worldPoints, lerpValue, Color.cyan, sphereRadius, _showDebug, true);
         var bezierLerpPointsL2 =
-            VisualizeAndLerpPoints(bezierLerpPointsL1, lerpValue, Color.red, sphereRadius / 2, true);
+            VisualizeAndLerpPoints(bezierLerpPointsL1, lerpValue, Color.red, sphereRadius / 2, _showDebug);
         var bezierLerpPointsL3 =
-            VisualizeAndLerpPoints(bezierLerpPointsL2, lerpValue, Color.yellow, sphereRadius / 2, true);
-        VisualizeAndLerpPoints(bezierLerpPointsL3, lerpValue, Color.green, sphereRadius / 2, true);
+            VisualizeAndLerpPoints(bezierLerpPointsL2, lerpValue, Color.yellow, sphereRadius / 2, _showDebug);
+        VisualizeAndLerpPoints(bezierLerpPointsL3, lerpValue, Color.green, sphereRadius / 2, _showDebug);
 
         // Bezier line visualization
         List<Vector3> handleVisualization = new();
@@ -86,7 +92,7 @@ public class Bezier : MonoBehaviour
         }
 
         Handles.color = lineColor;
-        Handles.DrawAAPolyLine(7f, handleVisualization.ToArray());
+        Handles.DrawAAPolyLine(3f, handleVisualization.ToArray());
 
         // Point creation mode
         switch (curveSamplingMode)
@@ -160,9 +166,9 @@ public class Bezier : MonoBehaviour
     }
 
     private static List<Vector3> VisualizeAndLerpPoints(List<Vector3> pointList, float lerpValue, Color gizmoColor,
-        float sphereRadius = 0.1f, bool drawGizmos = false)
+        float sphereRadius = 0.1f, bool debugMode = false, bool isHandle = false)
     {
-        if (drawGizmos)
+        if (debugMode)
         {
             foreach (var point in pointList)
             {
@@ -173,25 +179,58 @@ public class Bezier : MonoBehaviour
         }
 
         List<Vector3> lerpPoints = new();
+        
         // Draw lines
         for (var i = 0; i < pointList.Count - 1; i++)
         {
             var p1 = pointList[i];
             var p2 = pointList[i + 1];
-            if (drawGizmos)
-            {
-                Gizmos.DrawLine(p1, p2);
-            }
+
 
             // populate next point list
             var lP = Vector3.Lerp(p1, p2, lerpValue);
             lerpPoints.Add(lP);
+
+            // skip for first handles
+            if (debugMode)
+            {
+                Gizmos.DrawLine(p1, p2);
+            }
+            else if (isHandle)
+            {
+                if (i == 1)
+                {
+                    continue;
+                }
+                Gizmos.color = gizmoColor;
+                Gizmos.DrawLine(p1, p2);
+                Gizmos.DrawSphere(p1, sphereRadius);
+                Gizmos.DrawSphere(p2, sphereRadius);
+            }
         }
 
         return lerpPoints;
     }
 
-    public void SampleCurveWithPercentage(List<Vector3> points, float percentage, bool updateChildrenCoords,
+    public void SampleCurve(CurveSamplingMode samplingMode, float value, bool updateChildren, bool drawGizmos)
+    {
+        switch (samplingMode)
+        {
+            case CurveSamplingMode.SampleWithDistance:
+                SampleCurveWithDistance(GetWorldControlPoints(), value, updateChildren, drawGizmos);
+                break;
+            case CurveSamplingMode.SampleWithPercentage:
+                SampleCurveWithPercentage(GetWorldControlPoints(), value, updateChildren, drawGizmos);
+                break;
+            case CurveSamplingMode.SampleWithCount:
+                SampleCurveWithCount(GetWorldControlPoints(), Mathf.FloorToInt(value), updateChildren, drawGizmos);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(samplingMode), samplingMode, null);
+        }
+    }
+
+    private void SampleCurveWithPercentage(List<Vector3> points, float percentage, bool updateChildrenCoords,
         bool drawGizmos)
     {
         float step = Mathf.Clamp01(percentage);
@@ -207,7 +246,7 @@ public class Bezier : MonoBehaviour
             Vector3 point = GetDiscreteBezierPoint(points, t);
             if (drawGizmos)
             {
-                Gizmos.DrawSphere(point, sphereRadius);
+                Gizmos.DrawSphere(point, sphereRadius / 2);
             }
 
             if (updateChildrenCoords)
@@ -222,7 +261,7 @@ public class Bezier : MonoBehaviour
             Vector3 endPoint = GetDiscreteBezierPoint(points, 1f);
             if (drawGizmos)
             {
-                Gizmos.DrawSphere(endPoint, sphereRadius);
+                Gizmos.DrawSphere(endPoint, sphereRadius / 2);
             }
 
             if (updateChildrenCoords)
@@ -232,7 +271,7 @@ public class Bezier : MonoBehaviour
         }
     }
 
-    public void SampleCurveWithDistance(List<Vector3> points, float nodeDistance, bool updateChildrenCoords,
+    private void SampleCurveWithDistance(List<Vector3> points, float nodeDistance, bool updateChildrenCoords,
         bool drawGizmos)
     {
         float spacing = nodeDistance;
@@ -241,7 +280,7 @@ public class Bezier : MonoBehaviour
 
         if (drawGizmos)
         {
-            Gizmos.color = Color.blue;
+            Gizmos.color = Color.white;
         }
 
         for (int i = 0; i <= sampleCount; i++)
@@ -250,7 +289,7 @@ public class Bezier : MonoBehaviour
             Vector3 point = GetPointAtDistance(points, distance, curveSubdivisions);
             if (drawGizmos)
             {
-                Gizmos.DrawSphere(point, sphereRadius);
+                Gizmos.DrawSphere(point, sphereRadius / 2);
             }
 
             if (updateChildrenCoords)
@@ -263,7 +302,7 @@ public class Bezier : MonoBehaviour
         Vector3 endPoint = GetDiscreteBezierPoint(points, 1f);
         if (drawGizmos)
         {
-            Gizmos.DrawSphere(endPoint, sphereRadius);
+            Gizmos.DrawSphere(endPoint, sphereRadius / 2);
         }
 
         if (updateChildrenCoords)
@@ -272,14 +311,14 @@ public class Bezier : MonoBehaviour
         }
     }
 
-    public void SampleCurveWithCount(List<Vector3> points, int nodeCount, bool updateChildrenCoords, bool drawGizmos)
+    private void SampleCurveWithCount(List<Vector3> points, int nodeCount, bool updateChildrenCoords, bool drawGizmos)
     {
         int count = Mathf.Max(3, nodeCount);
         float step = 1f / (count - 1);
 
         if (drawGizmos)
         {
-            Gizmos.color = Color.magenta;
+            Gizmos.color = Color.white;
         }
 
         for (int i = 0; i < count; i++)
@@ -288,7 +327,7 @@ public class Bezier : MonoBehaviour
             Vector3 point = GetDiscreteBezierPoint(points, t);
             if (drawGizmos)
             {
-                Gizmos.DrawSphere(point, sphereRadius);
+                Gizmos.DrawSphere(point, sphereRadius / 2);
             }
 
             if (updateChildrenCoords)
@@ -311,14 +350,34 @@ public class Bezier : MonoBehaviour
     public GameObject CreateSamplePointObjects(List<Vector3> coords)
     {
         GameObject samplePointParent = new GameObject("Sampled Points");
+        samplePointsHolder = samplePointParent;
         foreach (var coord in coords)
         {
             GameObject samplePoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             samplePoint.transform.position = coord;
-            samplePoint.transform.localScale = Vector3.one;
+            samplePoint.transform.localScale = Vector3.one / 4;
             samplePoint.transform.parent = samplePointParent.transform;
         }
 
         return samplePointParent;
+    }
+
+    public void DestroySamplePointObjects()
+    {
+        if (samplePointsHolder != null)
+        {
+            DestroyImmediate(samplePointsHolder);
+            samplePointsHolder = null;
+        }
+    }
+
+    public void SetDebugState(bool debug)
+    {
+        _showDebug = debug;
+    }
+
+    public bool GetDebugState()
+    {
+        return _showDebug;
     }
 }

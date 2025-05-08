@@ -6,29 +6,29 @@ public class BezierMainEditorWindow : EditorWindow
 {
     private readonly Vector3 _userViewCenter = new(0.5f, 0.5f, 0);
 
-    // Editor Mode
-    private BezierToolMode _bezierToolMode;
-
     // Reticle Variables
     private static bool _showReticle = true;
+    private static bool _showLaneGuides = true;
     private Vector3? _reticlePoint;
 
-    private static bool _showLaneGuides = true;
-
+    private bool _showDebug;
+    private float _tVal = 0.5f;
     private float _laneWidth = 3f;
     private float _laneLength = 5f;
-    private float _tVal = 0.5f;
-    private bool _showDebug;
-    private Bezier _activeBezier;
+
+    private Lane _selectedLane;
+    private Bezier _selectedBezier;
 
     // Line Color
     [ColorUsage(false, false)] private Color _rightLineColor = Color.green;
     [ColorUsage(false, false)] private Color _leftLineColor = Color.blue;
 
     // Node Stamping
-    [Range(0.01f, 100f)] private float _nodeStampDistance = 1f;
-    [Range(0.01f, 1f)] private float _nodeStampPercentage = 0.25f;
-    private int _nodeStampCount = 3;
+    [Range(0.01f, 100f)] private const float NodeStampDistance = 0.5f;
+    [Range(0.01f, 1f)] private const float NodeStampPercentage = 0.2f;
+    private const int NodeStampCount = 7;
+
+    private float _samplingValue;
     private CurveSamplingMode _curveSamplingMode;
 
     [MenuItem("Window/Bezier Curve Tool")]
@@ -50,127 +50,101 @@ public class BezierMainEditorWindow : EditorWindow
     public void OnGUI()
     {
         _showDebug = EditorGUILayout.Toggle("Show Debug", _showDebug);
+        if (_selectedBezier)
+        {
+            _selectedBezier.SetDebugState(_showDebug);
+        }
 
-        _tVal = EditorGUILayout.Slider("t Value", _tVal, 0f, 1f);
+        if (_showDebug)
+        {
+            _tVal = EditorGUILayout.Slider("t Value", _tVal, 0f, 1f);
+        }
 
+        // guide toggles
+        _showLaneGuides = GUILayout.Toggle(_showLaneGuides, "Show placement guides");
+        _showReticle = _showLaneGuides;
+        _laneWidth = EditorGUILayout.Slider("Lane Width (m)", _laneWidth, 0.1f, 10f);
+        _laneLength = EditorGUILayout.Slider("Lane Length (m)", _laneLength, 0.1f, 100f);
+
+        // Line Color
         EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button("Edit Mode", GUILayout.Height(30), GUILayout.MinWidth(150), GUILayout.ExpandWidth(true)))
-        {
-            _bezierToolMode = BezierToolMode.EditMode;
-        }
-
+        EditorGUILayout.LabelField("Left Line Color", GUILayout.Width(100));
+        _leftLineColor = EditorGUILayout.ColorField(_leftLineColor);
         EditorGUILayout.Space(10, false);
-
-        if (GUILayout.Button("Spawn Mode", GUILayout.Height(30), GUILayout.MinWidth(150), GUILayout.ExpandWidth(true)))
-        {
-            _bezierToolMode = BezierToolMode.SpawnMode;
-        }
-
+        EditorGUILayout.LabelField("Right Line Color", GUILayout.Width(100));
+        _rightLineColor = EditorGUILayout.ColorField(_rightLineColor);
         EditorGUILayout.EndHorizontal();
 
-        switch (_bezierToolMode)
+        // Spawn Lane
+        if (GUILayout.Button("Spawn Lane Objects"))
         {
-            case BezierToolMode.SpawnMode:
+            SpawnLane();
+        }
+
+        _curveSamplingMode =
+            (CurveSamplingMode)EditorGUILayout.EnumPopup("Curve Sampling Mode", _curveSamplingMode);
+        switch (_curveSamplingMode)
+        {
+            case CurveSamplingMode.SampleWithPercentage:
             {
-                SceneView.lastActiveSceneView.Repaint();
-                EditorGUILayout.LabelField("Bezier Tool - Spawn Mode", EditorStyles.boldLabel);
+                _samplingValue =
+                    EditorGUILayout.Slider("Node Stamp Percentage", NodeStampPercentage, 0.01f, 1f);
+                break;
+            }
+            case CurveSamplingMode.SampleWithDistance:
+            {
+                _samplingValue =
+                    EditorGUILayout.Slider("Node Stamp Distance", NodeStampDistance, 0.01f, 100f);
+                break;
+            }
+            case CurveSamplingMode.SampleWithCount:
+            {
+                _samplingValue = EditorGUILayout.IntField("Node Stamp Count", NodeStampCount);
 
-                // guide toggles 
-                _showReticle = true;
-                _showLaneGuides = GUILayout.Toggle(_showLaneGuides, "Show lane width guide");
-                _laneWidth = EditorGUILayout.Slider("Lane Width (m)", _laneWidth, 0.1f, 10f);
-                _laneLength = EditorGUILayout.Slider("Lane Length (m)", _laneLength, 0.1f, 100f);
-
-                // Line Color
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField("Left Line Color", GUILayout.Width(100));
-                _leftLineColor = EditorGUILayout.ColorField(_leftLineColor);
-                EditorGUILayout.Space(10, false);
-                EditorGUILayout.LabelField("Right Line Color", GUILayout.Width(100));
-                _rightLineColor = EditorGUILayout.ColorField(_rightLineColor);
-                EditorGUILayout.EndHorizontal();
-
-                // Spawn Lane
-                if (GUILayout.Button("Spawn Lane Objects"))
+                // prevent negative or zero values
+                if (_samplingValue < 1)
                 {
-                    SpawnLane();
-                }
-
-                // Node Creation Mode
-                _curveSamplingMode =
-                    (CurveSamplingMode)EditorGUILayout.EnumPopup("Curve Sampling Mode", _curveSamplingMode);
-                switch (_curveSamplingMode)
-                {
-                    case CurveSamplingMode.SampleWithPercentage:
-                        _nodeStampPercentage =
-                            EditorGUILayout.Slider("Node Stamp Percentage", _nodeStampPercentage, 0.01f, 1f);
-                        break;
-                    case CurveSamplingMode.SampleWithDistance:
-                        _nodeStampDistance =
-                            EditorGUILayout.Slider("Node Stamp Distance", _nodeStampDistance, 0.01f, 100f);
-                        break;
-                    case CurveSamplingMode.SampleWithCount:
-                    {
-                        _nodeStampCount = EditorGUILayout.IntField("Node Stamp Count", _nodeStampCount);
-
-                        // prevent negative or zero values
-                        if (_nodeStampCount < 1)
-                        {
-                            _nodeStampCount = 1;
-                        }
-
-                        break;
-                    }
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
-
-                if (GUILayout.Button("Generate Bezier Curve"))
-                {
-                    if (_activeBezier != null)
-                    {
-                        _activeBezier.ClearSamplePoints();
-                        switch (_curveSamplingMode)
-                        {
-                            case CurveSamplingMode.SampleWithPercentage:
-                                _activeBezier.SampleCurveWithPercentage(_activeBezier.GetWorldControlPoints(),
-                                    _nodeStampPercentage, true, false);
-                                break;
-                            case CurveSamplingMode.SampleWithDistance:
-                                _activeBezier.SampleCurveWithDistance(_activeBezier.GetWorldControlPoints(),
-                                    _nodeStampDistance, true, false);
-                                break;
-                            case CurveSamplingMode.SampleWithCount:
-                                _activeBezier.SampleCurveWithCount(_activeBezier.GetWorldControlPoints(),
-                                    _nodeStampCount, true, false);
-                                break;
-                            default:
-                                throw new ArgumentOutOfRangeException();
-                        }
-
-                        var samplePointsHolder =
-                            _activeBezier.CreateSamplePointObjects(_activeBezier.GetSamplePoints());
-                        samplePointsHolder.transform.SetParent(_activeBezier.transform);
-                    }
-                    else
-                    {
-                        Debug.LogWarning("No active Bezier object selected.");
-                    }
+                    _samplingValue = 1;
                 }
 
                 break;
             }
-            case BezierToolMode.EditMode:
-            {
-                SceneView.lastActiveSceneView.Repaint();
-                // disable guides for edit mode
-                _showReticle = false;
-                _showLaneGuides = false;
-            }
-                break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
+
+        if (GUILayout.Button("Sample Bezier Curve"))
+        {
+            if (_selectedBezier != null)
+            {
+                _selectedBezier.ClearSamplePoints();
+                _selectedBezier.SampleCurve(_curveSamplingMode, _samplingValue, true, false);
+                // destroy old points if exists
+                _selectedBezier.DestroySamplePointObjects();
+                // create sample points
+                var samplePointsHolder =
+                    _selectedBezier.CreateSamplePointObjects(_selectedBezier.GetSamplePoints());
+                samplePointsHolder.transform.SetParent(_selectedBezier.transform);
+            }
+            else
+            {
+                Debug.LogWarning("Please select an object that has a 'Bezier' component attached to it.");
+            }
+        }
+
+        if (GUILayout.Button("Sample Lanes"))
+        {
+            if (_selectedLane != null)
+            {
+                _selectedLane.SampleBezierLines(_curveSamplingMode, _samplingValue, true, false);
+            }
+            else
+            {
+                Debug.LogWarning("Please select an object that has a 'Lane' component attached to it.");
+            }
+        }
+        
+        SceneView.lastActiveSceneView.Repaint();
     }
 
     private void OnSceneGUI(SceneView sceneView)
@@ -202,18 +176,19 @@ public class BezierMainEditorWindow : EditorWindow
                 // z is length
                 // x is width
                 Handles.color = Color.yellow;
-                Handles.DrawLine(_reticlePoint.Value + new Vector3(_laneWidth / 2, 0, _laneLength),
-                    _reticlePoint.Value + new Vector3(_laneWidth / 2, 0, 0), 3);
-                Handles.DrawLine(_reticlePoint.Value + new Vector3(-_laneWidth / 2, 0, _laneLength),
-                    _reticlePoint.Value + new Vector3(-_laneWidth / 2, 0, 0), 3);
+                Handles.DrawLine(_reticlePoint.Value + new Vector3(_laneWidth / 2, 0, _laneLength / 2),
+                    _reticlePoint.Value + new Vector3(_laneWidth / 2, 0, -_laneLength / 2), 3);
+                Handles.DrawLine(_reticlePoint.Value + new Vector3(-_laneWidth / 2, 0, _laneLength / 2),
+                    _reticlePoint.Value + new Vector3(-_laneWidth / 2, 0, -_laneLength / 2), 3);
             }
         }
 
+
         // Draw control point handles
-        if (_activeBezier != null)
+        if (_selectedBezier != null)
         {
             Handles.color = Color.cyan;
-            var worldPoints = _activeBezier.GetWorldControlPoints();
+            var worldPoints = _selectedBezier.GetWorldControlPoints();
 
             for (var index = 0; index < worldPoints.Count; index++)
             {
@@ -225,27 +200,27 @@ public class BezierMainEditorWindow : EditorWindow
                 {
                     Undo.RecordObject(this, "Move Control Point");
                     // update control point with the new pos
-                    _activeBezier.UpdateControlPoint(index, newPos);
+                    _selectedBezier.UpdateControlPoint(index, newPos);
                 }
             }
 
             // Update lerp value
-            _activeBezier.lerpValue = _tVal;
+            _selectedBezier.lerpValue = _tVal;
 
             // Update stamp options & values
             switch (_curveSamplingMode)
             {
                 case CurveSamplingMode.SampleWithPercentage:
-                    _activeBezier.nodeStampPercentage = _nodeStampPercentage;
-                    _activeBezier.curveSamplingMode = CurveSamplingMode.SampleWithPercentage;
+                    _selectedBezier.nodeStampPercentage = NodeStampPercentage;
+                    _selectedBezier.curveSamplingMode = CurveSamplingMode.SampleWithPercentage;
                     break;
                 case CurveSamplingMode.SampleWithDistance:
-                    _activeBezier.nodeStampDistance = _nodeStampDistance;
-                    _activeBezier.curveSamplingMode = CurveSamplingMode.SampleWithDistance;
+                    _selectedBezier.nodeStampDistance = NodeStampDistance;
+                    _selectedBezier.curveSamplingMode = CurveSamplingMode.SampleWithDistance;
                     break;
                 case CurveSamplingMode.SampleWithCount:
-                    _activeBezier.nodeStampCount = _nodeStampCount;
-                    _activeBezier.curveSamplingMode = CurveSamplingMode.SampleWithCount;
+                    _selectedBezier.nodeStampCount = NodeStampCount;
+                    _selectedBezier.curveSamplingMode = CurveSamplingMode.SampleWithCount;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -258,17 +233,23 @@ public class BezierMainEditorWindow : EditorWindow
     // Get active bezier
     private void OnSelectionChange()
     {
+        // Get selected bezier
         if (Selection.activeGameObject != null && Selection.activeGameObject.TryGetComponent(out Bezier bezier))
         {
             if (bezier != null)
             {
-                _activeBezier = bezier;
+                _selectedBezier = bezier;
+                _selectedLane = _selectedBezier.transform.parent.gameObject.GetComponent<Lane>();
+                _showDebug = _selectedBezier.GetDebugState();
             }
         }
         else
         {
-            _activeBezier = null;
+            _selectedBezier = null;
+            _selectedLane = null;
         }
+
+        Repaint();
     }
 
     private Ray GetUserLookAt()
@@ -281,16 +262,11 @@ public class BezierMainEditorWindow : EditorWindow
         }
 
         Ray userView = sceneView.camera.ViewportPointToRay(_userViewCenter);
-
-        if (_showDebug)
-        {
-            Debug.DrawRay(userView.origin, userView.direction * 100, Color.red, 3f);
-        }
-
+        
         return userView;
     }
 
-    private void SpawnLane()
+    private GameObject SpawnLane()
     {
         if (Physics.Raycast(GetUserLookAt(), out RaycastHit hit))
         {
@@ -307,17 +283,26 @@ public class BezierMainEditorWindow : EditorWindow
             var posLeft = hit.point + new Vector3(-_laneWidth / 2, 0, 0);
 
             // add lines and set parent
-            AddLineBezier(posRight, _laneLength, "rightLine", _rightLineColor).transform
-                .SetParent(laneObject.transform);
-            AddLineBezier(posLeft, _laneLength, "leftLine", _leftLineColor).transform.SetParent(laneObject.transform);
+            var rightLineObj = CreateLineObject(posRight, _laneLength, "Right Line", _rightLineColor);
+            rightLineObj.transform.SetParent(laneObject.transform);
+            var leftLineObj =
+                CreateLineObject(posLeft, _laneLength, "Left Line", _leftLineColor);
+            leftLineObj.transform.SetParent(laneObject.transform);
+
+            // add lane component
+            var lane = laneObject.AddComponent<Lane>();
+            lane.SetRightBezier(rightLineObj.GetComponent<Bezier>());
+            lane.SetLeftBezier(leftLineObj.GetComponent<Bezier>());
+
+            return laneObject;
         }
-        else
-        {
-            Debug.Log("Aim to a mesh to spawn a handle.");
-        }
+
+        Debug.Log("Aim to a mesh to spawn a handle.");
+
+        return null;
     }
 
-    private static GameObject AddLineBezier(Vector3 nodePosition, float length, string objName, Color color)
+    private static GameObject CreateLineObject(Vector3 nodePosition, float length, string objName, Color color)
     {
         GameObject bezierObject = new GameObject(objName)
         {
