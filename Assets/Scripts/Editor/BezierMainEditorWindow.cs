@@ -76,7 +76,7 @@ public class BezierMainEditorWindow : EditorWindow
         EditorGUILayout.EndHorizontal();
 
         // Spawn Lane
-        if (GUILayout.Button("Spawn Lane Objects"))
+        if (GUILayout.Button("Spawn Lane Object"))
         {
             SpawnLane();
         }
@@ -118,7 +118,7 @@ public class BezierMainEditorWindow : EditorWindow
                 throw new ArgumentOutOfRangeException();
         }
 
-        if (GUILayout.Button("Sample Bezier Curve"))
+        if (GUILayout.Button("Sample Single Selected Curve"))
         {
             if (_selectedBezier != null)
             {
@@ -137,7 +137,7 @@ public class BezierMainEditorWindow : EditorWindow
             }
         }
 
-        if (GUILayout.Button("Sample Lanes"))
+        if (GUILayout.Button("Sample Selected Lane"))
         {
             if (_selectedLane != null)
             {
